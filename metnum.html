@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Turunan Numerik (Maju & Mundur)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: url('https://images.unsplash.com/photo-1591696205602-2f950c417cb9?auto=format&fit=crop&w=1650&q=80') no-repeat center center fixed;
+      background-size: cover;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      padding: 30px;
+      border-radius: 16px;
+      margin-top: 40px;
+      max-width: 900px;
+      width: 90%;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    h2, h3 {
+      text-align: center;
+      color: #00e1ff;
+    }
+    label {
+      margin-top: 10px;
+      font-weight: bold;
+      display: block;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 12px;
+      background-color: #00b8d4;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+    button:hover {
+      background-color: #008caa;
+    }
+    .result-box {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 20px;
+      color: #fff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      color: white;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    canvas {
+      margin-top: 30px;
+      background-color: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container" id="exportContent">
+  <h2>Turunan Numerik - Metode Selisih Maju & Mundur</h2>
+
+  <!-- USER MANUAL DI ATAS -->
+  <div class="result-box">
+    <h3>User Manual</h3>
+    <p><b>Langkah 1:</b> Masukkan nilai <code>x</code>, <code>h</code>, dan fungsi <code>f(x)</code></p>
+    <p><b>Langkah 2:</b> Klik tombol <b>"Hitung & Tampilkan Grafik"</b></p>
+    <p><b>Langkah 3:</b> Lihat hasil berupa:</p>
+    <ul>
+      <li>f′(x) dan f″(x) dari metode Selisih Maju & Mundur</li>
+      <li>Grafik fungsi dan turunannya</li>
+      <li>Tabel iterasi dari f(x) dan f′(x)</li>
+    </ul>
+    <p><b>Langkah 4:</b> Klik tombol <b>"Unduh PDF"</b> untuk menyimpan hasil.</p>
+    <p><b>Contoh Fungsi:</b> <code>Math.sin(x)</code>, <code>x**2 + 3*x + 2</code>, <code>Math.exp(x)</code></p>
+  </div>
+
+  <!-- INPUT FORM -->
+  <label for="x">Nilai x:</label>
+  <input type="number" id="x" step="any" placeholder="Contoh: 1.9">
+  <label for="h">Nilai h:</label>
+  <input type="number" id="h" step="any" placeholder="Contoh: 0.1">
+  <label for="fx">Fungsi f(x):</label>
+  <input type="text" id="fx" value="Math.sin(x)" placeholder="Contoh: Math.sin(x), x**2, dll">
+
+  <button onclick="hitungTurunan()">Hitung & Tampilkan Grafik</button>
+  <button onclick="unduhPDF()">Unduh PDF</button>
+
+  <div class="result-box" id="majuResult"></div>
+  <div class="result-box" id="mundurResult"></div>
+  <div class="result-box" id="tableSection"></div>
+</div>
+
+<canvas id="grafikFx" width="600" height="300"></canvas>
+
+<script>
+let chart = null;
+function hitungTurunan() {
+  const x = parseFloat(document.getElementById("x").value);
+  const h = parseFloat(document.getElementById("h").value);
+  const fxString = document.getElementById("fx").value;
+
+  if (isNaN(x) || isNaN(h) || fxString.trim() === "") {
+    alert("Masukkan semua nilai dengan benar!");
+    return;
+  }
+
+  try {
+    const f = new Function("x", "return " + fxString + ";");
+    const fx0 = f(x), fx1 = f(x + h), fx2 = f(x + 2 * h);
+    const fxm1 = f(x - h), fxm2 = f(x - 2 * h);
+
+    const f1_maju = (fx1 - fx0) / h;
+    const f2_maju = (fx2 - 2 * fx1 + fx0) / (h * h);
+    const f1_mundur = (fx0 - fxm1) / h;
+    const f2_mundur = (fx0 - 2 * fxm1 + fxm2) / (h * h);
+
+    document.getElementById("majuResult").innerHTML = `
+      <h3>Metode Selisih Maju</h3>
+      <p><b>f'(x) =</b> ${f1_maju.toFixed(6)}</p>
+      <p><b>f''(x) =</b> ${f2_maju.toFixed(6)}</p>`;
+    document.getElementById("mundurResult").innerHTML = `
+      <h3>Metode Selisih Mundur</h3>
+      <p><b>f'(x) =</b> ${f1_mundur.toFixed(6)}</p>
+      <p><b>f''(x) =</b> ${f2_mundur.toFixed(6)}</p>`;
+
+    const dataX = [], dataY = [], dataDyMaju = [], dataDyMundur = [];
+    for (let j = -10; j <= 10; j++) {
+      let xi = x + j * h;
+      dataX.push(xi.toFixed(4));
+      dataY.push(f(xi));
+    }
+
+    for (let i = 0; i < dataX.length - 1; i++) {
+      dataDyMaju.push((dataY[i + 1] - dataY[i]) / h);
+    }
+    dataDyMaju.push(NaN);
+
+    for (let i = 1; i < dataX.length; i++) {
+      dataDyMundur.push((dataY[i] - dataY[i - 1]) / h);
+    }
+    dataDyMundur.unshift(NaN);
+
+    let tabelMaju = "<h3>Tabel f(x) & f'(x) [Selisih Maju]</h3><table><tr><th>x</th><th>f(x)</th><th>f'(x)</th></tr>";
+    for (let i = 0; i < dataX.length; i++) {
+      tabelMaju += `<tr><td>${dataX[i]}</td><td>${dataY[i].toFixed(6)}</td><td>${isNaN(dataDyMaju[i]) ? "-" : dataDyMaju[i].toFixed(6)}</td></tr>`;
+    }
+    tabelMaju += "</table>";
+
+    let tabelMundur = "<h3>Tabel f(x) & f'(x) [Selisih Mundur]</h3><table><tr><th>x</th><th>f(x)</th><th>f'(x)</th></tr>";
+    for (let i = 0; i < dataX.length; i++) {
+      tabelMundur += `<tr><td>${dataX[i]}</td><td>${dataY[i].toFixed(6)}</td><td>${isNaN(dataDyMundur[i]) ? "-" : dataDyMundur[i].toFixed(6)}</td></tr>`;
+    }
+    tabelMundur += "</table>";
+
+    document.getElementById("tableSection").innerHTML = tabelMaju + tabelMundur;
+
+    if (chart) chart.destroy();
+    chart = new Chart(document.getElementById("grafikFx"), {
+      type: 'line',
+      data: {
+        labels: dataX,
+        datasets: [
+          {
+            label: 'f(x)',
+            data: dataY,
+            borderColor: '#00e1ff',
+            backgroundColor: 'rgba(0,225,255,0.15)',
+            fill: true,
+            tension: 0.3
+          },
+          {
+            label: "f'(x) - Selisih Maju",
+            data: dataDyMaju,
+            borderColor: '#ff7675',
+            backgroundColor: 'rgba(255,118,117,0.15)',
+            fill: true,
+            tension: 0.3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { labels: { color: '#fff' } }
+        },
+        scales: {
+          x: { ticks: { color: '#fff' }, title: { display: true, text: 'x', color: '#fff' }},
+          y: { ticks: { color: '#fff' }, title: { display: true, text: 'Nilai', color: '#fff' }}
+        }
+      }
+    });
+
+  } catch (e) {
+    alert("Fungsi tidak valid. Contoh: Math.sin(x), x**2, dst.");
+  }
+}
+
+function unduhPDF() {
+  const element = document.getElementById('exportContent');
+  html2pdf().from(element).save('turunan-numerik.pdf');
+}
+</script>
+
+</body>
+</html>
